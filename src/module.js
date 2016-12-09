@@ -1,1 +1,3 @@
-angular.module('angularPayments', [])
+"use strict";
+
+angular.module('angularPayments', []);
