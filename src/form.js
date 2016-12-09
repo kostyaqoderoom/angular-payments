@@ -13,7 +13,7 @@ angular.module('angularPayments')
         // filter valid stripe-values from scope and convert them from camelCase to snake_case
         var _getDataToSend = function (data) {
             
-            var possibleKeys = ['number', 'expMonth', 'expYear', 'expiry',
+            var possibleKeys = ['card', 'number', 'expMonth', 'expYear', 'expiry',
                 'cvc', 'name', 'addressLine1',
                 'addressLine2', 'addressCity',
                 'addressState', 'addressZip',
@@ -44,7 +44,7 @@ angular.module('angularPayments')
                 }
             }
             
-            ret.number = (ret.number || '').replace(/ /g, '');
+            ret.number = (ret.number || ret.card || '').replace(/ /g, '');
             
             return ret;
         };
@@ -57,43 +57,33 @@ angular.module('angularPayments')
                     throw 'stripeForm requires that you have stripe.js installed. Include https://js.stripe.com/v2/ into your html.';
                 }
                 
-                var form = angular.element(elem),
-                    formValues = scope[attr.name];
+                var form = angular.element(elem);
                 
                 form.bind('submit', function () {
-                    
-                    // If the form does not have number or cvc, then skip form validation.
-                    if (formValues.number && formValues.cvc) {
-                        var button = form.find('button');
-                        button.prop('disabled', true);
-                        
-                        if (form.hasClass('ng-valid')) {
-                            
-                            $window.Stripe.createToken(_getDataToSend(scope[attr.name]), function () {
-                                var args = arguments;
-                                scope.$apply(function () {
-                                    scope[attr.stripeForm].apply(scope, args);
-                                });
-                                button.prop('disabled', false);
-                            });
-                            
-                        } else {
-                            
+    
+                    var button = form.find('button');
+                    button.prop('disabled', true);
+    
+                    if (form.hasClass('ng-valid')) {
+        
+                        $window.Stripe.createToken(_getDataToSend(scope[attr.name]), function () {
+                            var args = arguments;
                             scope.$apply(function () {
-                                scope[attr.stripeForm].apply(scope, [400, {error: 'Invalid form submitted.'}]);
+                                scope[attr.stripeForm].apply(scope, args);
                             });
                             button.prop('disabled', false);
-                        }
-                        
-                        scope.expMonth = null;
-                        scope.expYear = null;
-                    }
-                    else {
-                        var args = arguments;
-                        scope.$apply(function () {
-                            scope[attr.stripeForm].apply(scope, args);
                         });
+        
+                    } else {
+        
+                        scope.$apply(function () {
+                            scope[attr.stripeForm].apply(scope, [400, {error: 'Invalid form submitted.'}]);
+                        });
+                        button.prop('disabled', false);
                     }
+    
+                    scope.expMonth = null;
+                    scope.expYear = null;
                 });
             }
         };
